@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Comandas Dark Kitchen</title>
+  <style>
+    :root{
+      --bg:#0b1220;
+      --panel:#111827;
+      --text:#f8fafc;
+      --muted:#94a3b8;
+      --line:rgba(255,255,255,0.08);
+      --green:#22c55e;
+      --green2:#16a34a;
+      --shadow:0 24px 50px rgba(0,0,0,0.35);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Inter,system-ui,sans-serif;
+      background:
+        radial-gradient(circle at top right, rgba(59,130,246,0.10), transparent 18%),
+        linear-gradient(180deg,#0f172a 0%,#081120 100%);
+      color:var(--text);
+    }
+    .page{width:min(1100px,94%);margin:0 auto;padding:20px 0 28px}
+    .header{
+      background:rgba(15,23,42,0.92);
+      border:1px solid var(--line);
+      border-radius:24px;
+      padding:18px 20px;
+      box-shadow:var(--shadow);
+      margin-bottom:18px;
+    }
+    .header h1{margin:0;font-size:clamp(1.6rem,3vw,2.4rem)}
+    .header p{margin:6px 0 0;color:var(--muted)}
+    .layout{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+    .card{
+      background:rgba(15,23,42,0.92);
+      border:1px solid var(--line);
+      border-radius:24px;
+      box-shadow:var(--shadow);
+      padding:20px;
+    }
+    .stats{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:12px;
+      margin-top:18px;
+    }
+    .stat{
+      background:rgba(255,255,255,0.04);
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:16px;
+    }
+    .stat-label{color:var(--muted);font-size:.9rem;margin-bottom:8px}
+    .stat-value{font-size:1.7rem;font-weight:900;line-height:1}
+    form{display:grid;gap:14px;margin-top:14px}
+    .field{display:grid;gap:7px}
+    .row-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    label{font-size:.93rem;font-weight:800;color:#cbd5e1}
+    input,select{
+      width:100%;
+      padding:14px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,0.10);
+      background:#0f172a;
+      color:white;
+      font-size:1rem;
+      outline:none;
+    }
+    input[readonly]{background:#111827;color:#cbd5e1}
+    input:focus,select:focus{
+      border-color:#60a5fa;
+      box-shadow:0 0 0 4px rgba(59,130,246,0.15);
+    }
+    .toggle-wrap{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .toggle-card{
+      background:rgba(255,255,255,0.04);
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:14px;
+    }
+    .toggle-title{font-size:.92rem;font-weight:800;margin-bottom:10px;color:#e2e8f0}
+    .toggle-row{display:flex;gap:10px;flex-wrap:wrap}
+    .toggle-btn{
+      flex:1;
+      min-width:100px;
+      text-align:center;
+      padding:12px;
+      border-radius:12px;
+      border:2px solid #334155;
+      background:#0f172a;
+      cursor:pointer;
+      font-weight:800;
+      user-select:none;
+    }
+    .toggle-btn.active{
+      border-color:var(--green);
+      background:var(--green2);
+      color:white;
+    }
+    .actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px}
+    button{
+      border:none;
+      border-radius:14px;
+      padding:15px 16px;
+      font-size:1rem;
+      font-weight:900;
+      cursor:pointer;
+    }
+    .btn-primary{
+      background:linear-gradient(135deg,var(--green) 0%,var(--green2) 100%);
+      color:white;
+    }
+    .btn-secondary{
+      background:#1e293b;
+      color:white;
+      border:1px solid var(--line);
+    }
+    .message{min-height:24px;margin-top:8px;color:#86efac;font-weight:800}
+    .orders{display:grid;gap:12px;margin-top:12px}
+    .order-card{
+      background:#0f172a;
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:14px;
+      display:grid;
+      grid-template-columns:1.5fr 1fr 1fr;
+      gap:10px;
+      align-items:center;
+    }
+    .order-main strong{display:block;margin-bottom:4px}
+    .order-main span,.order-meta{color:var(--muted);font-size:.92rem;line-height:1.5}
+    .badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+    .badge{
+      padding:7px 10px;
+      border-radius:999px;
+      font-size:.78rem;
+      font-weight:800;
+    }
+    .badge-empaque{background:rgba(59,130,246,0.15);color:#93c5fd}
+    .badge-pago{background:rgba(245,158,11,0.15);color:#fcd34d}
+    .badge-id{background:rgba(34,197,94,0.15);color:#86efac}
+    .order-price{font-size:1rem;font-weight:900;text-align:right}
+    .empty{
+      padding:22px;
+      text-align:center;
+      color:var(--muted);
+      border:1px dashed rgba(255,255,255,0.15);
+      border-radius:16px;
+      background:rgba(255,255,255,0.02);
+      margin-top:12px;
+    }
+    @media (max-width:900px){
+      .layout,.row-2,.stats,.toggle-wrap,.actions,.order-card{grid-template-columns:1fr}
+      .order-price{text-align:left}
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <section class="header">
+      <h1>Comandas Dark Kitchen</h1>
+      <p>Versión UX/UI pro conectada a Google Sheets.</p>
+    </section>
+
+    <section class="layout">
+      <section class="card">
+        <h2>Modo cocina</h2>
+        <p style="color:#94a3b8;margin:0;">Selecciona producto, calcula automático y envía al tablero del chef.</p>
+
+        <div class="stats">
+          <div class="stat">
+            <div class="stat-label">Comandas locales</div>
+            <div class="stat-value" id="totalOrders">0</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Monto local</div>
+            <div class="stat-value" id="totalAmount">₡0</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Estado inicial</div>
+            <div class="stat-value">Nueva</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Nueva comanda</h2>
+        <form id="orderForm">
+          <div class="field">
+            <label for="cliente">Cliente</label>
+            <input type="text" id="cliente" placeholder="Ej: María González" required>
+          </div>
+
+          <div class="field">
+            <label for="producto">Producto</label>
+            <select id="producto" required>
+              <option value="">Selecciona un producto</option>
+            </select>
+          </div>
+
+          <div class="row-2">
+            <div class="field">
+              <label for="cantidad">Cantidad</label>
+              <input type="number" id="cantidad" min="1" step="1" value="1" required>
+            </div>
+
+            <div class="field">
+              <label for="precio">Precio unitario</label>
+              <input type="number" id="precio" readonly>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="monto">Monto total</label>
+            <input type="number" id="monto" readonly>
+          </div>
+
+          <div class="toggle-wrap">
+            <div class="toggle-card">
+              <div class="toggle-title">¿Requiere empaque?</div>
+              <div class="toggle-row">
+                <div class="toggle-btn active" data-group="empaque" data-value="Sí">Sí</div>
+                <div class="toggle-btn" data-group="empaque" data-value="No">No</div>
+              </div>
+            </div>
+
+            <div class="toggle-card">
+              <div class="toggle-title">Método de pago</div>
+              <div class="toggle-row">
+                <div class="toggle-btn active" data-group="pago" data-value="Efectivo">Efectivo</div>
+                <div class="toggle-btn" data-group="pago" data-value="SINPE">SINPE</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button type="submit" class="btn-primary">Guardar pedido</button>
+            <button type="button" class="btn-secondary" id="clearLocalBtn">Borrar locales</button>
+          </div>
+        </form>
+
+        <div class="message" id="message"></div>
+      </section>
+    </section>
+
+    <section class="card" style="margin-top:18px;">
+      <h2>Últimas comandas locales</h2>
+      <div class="orders" id="ordersContainer"></div>
+    </section>
+  </div>
+
+  <script>
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyo-VlyleZfK_Oyhb6XLG4cQh41IHSBaWX7RL2CjDwjT8AxptdscBjjt4Ty4Q6S0QNV/exec';
+    const STORAGE_KEY = 'comandas-dark-kitchen-github';
+
+    const form = document.getElementById('orderForm');
+    const clienteInput = document.getElementById('cliente');
+    const productoSelect = document.getElementById('producto');
+    const cantidadInput = document.getElementById('cantidad');
+    const precioInput = document.getElementById('precio');
+    const montoInput = document.getElementById('monto');
+    const message = document.getElementById('message');
+    const ordersContainer = document.getElementById('ordersContainer');
+    const clearLocalBtn = document.getElementById('clearLocalBtn');
+    const totalOrders = document.getElementById('totalOrders');
+    const totalAmount = document.getElementById('totalAmount');
+
+    let empaque = 'Sí';
+    let pago = 'Efectivo';
+    let products = [];
+
+    function formatCurrency(value) {
+      return new Intl.NumberFormat('es-CR', {
+        style: 'currency',
+        currency: 'CRC',
+        maximumFractionDigits: 2
+      }).format(Number(value || 0));
+    }
+
+    function showMessage(text) {
+      message.textContent = text;
+      setTimeout(() => message.textContent = '', 2200);
+    }
+
+    function getOrders() {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    }
+
+    function saveOrders(orders) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
+    }
+
+    function renderOrders() {
+      const orders = getOrders();
+      ordersContainer.innerHTML = '';
+
+      if (!orders.length) {
+        ordersContainer.innerHTML = '<div class="empty">Todavía no hay comandas locales.</div>';
+      } else {
+        orders.forEach(order => {
+          const card = document.createElement('article');
+          card.className = 'order-card';
+          card.innerHTML = `
+            <div class="order-main">
+              <strong>${order.cliente}</strong>
+              <span>${order.cantidad} x ${order.producto}</span>
+              <div class="badges">
+                <span class="badge badge-id">${order.id || 'Pendiente'}</span>
+                <span class="badge badge-empaque">Empaque: ${order.empaque}</span>
+                <span class="badge badge-pago">Pago: ${order.pago}</span>
+              </div>
+            </div>
+            <div class="order-meta">${order.fecha}</div>
+            <div class="order-price">${formatCurrency(order.monto)}</div>
+          `;
+          ordersContainer.appendChild(card);
+        });
+      }
+
+      totalOrders.textContent = orders.length;
+      totalAmount.textContent = formatCurrency(
+        orders.reduce((sum, o) => sum + Number(o.monto || 0), 0)
+      );
+    }
+
+    function findProduct(name) {
+      return products.find(p =>
+        String(p.producto).trim().toLowerCase() === String(name).trim().toLowerCase()
+      );
+    }
+
+    function recalculate() {
+      const product = findProduct(productoSelect.value);
+      const qty = parseInt(cantidadInput.value || '0', 10);
+
+      if (product) {
+        precioInput.value = product.precio;
+        montoInput.value = qty > 0 ? product.precio * qty : product.precio;
+      } else {
+        precioInput.value = '';
+        montoInput.value = '';
+      }
+    }
+
+    function resetSelections() {
+      document.querySelectorAll('.toggle-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelector('.toggle-btn[data-group="empaque"][data-value="Sí"]').classList.add('active');
+      document.querySelector('.toggle-btn[data-group="pago"][data-value="Efectivo"]').classList.add('active');
+      empaque = 'Sí';
+      pago = 'Efectivo';
+    }
+
+    async function loadProducts() {
+      const response = await fetch(`${WEB_APP_URL}?action=products`, { cache: 'no-store' });
+      const data = await response.json();
+      products = Array.isArray(data) ? data : [];
+      productoSelect.innerHTML = '<option value="">Selecciona un producto</option>';
+
+      products.forEach(item => {
+        const option = document.createElement('option');
+        option.value = item.producto;
+        option.textContent = `${item.producto} — ₡${item.precio}`;
+        productoSelect.appendChild(option);
+      });
+    }
+
+    document.querySelectorAll('.toggle-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const group = btn.dataset.group;
+        const value = btn.dataset.value;
+        document.querySelectorAll(`.toggle-btn[data-group="${group}"]`).forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        if (group === 'empaque') empaque = value;
+        if (group === 'pago') pago = value;
+      });
+    });
+
+    productoSelect.addEventListener('change', recalculate);
+    cantidadInput.addEventListener('input', recalculate);
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const cliente = clienteInput.value.trim();
+      const producto = productoSelect.value.trim();
+      const cantidad = parseInt(cantidadInput.value || '0', 10);
+      const product = findProduct(producto);
+
+      if (!cliente || !producto || !product || !cantidad || cantidad < 1) {
+        showMessage('Completa los datos correctamente.');
+        return;
+      }
+
+      const precio = Number(product.precio);
+      const monto = precio * cantidad;
+      const fecha = new Date().toLocaleString('es-CR');
+
+      try {
+        const response = await fetch(WEB_APP_URL, {
+          method: 'POST',
+          body: new URLSearchParams({
+            fecha,
+            cliente,
+            cantidad,
+            producto,
+            empaque,
+            pago,
+            estado: 'Nueva'
+          })
+        });
+
+        const result = await response.json();
+
+        if (result.ok) {
+          const orders = getOrders();
+          orders.unshift({
+            id: result.id,
+            fecha,
+            cliente,
+            cantidad,
+            producto,
+            precio: result.precio,
+            monto: result.monto,
+            empaque,
+            pago,
+            estado: 'Nueva'
+          });
+          saveOrders(orders);
+          renderOrders();
+          showMessage(`Pedido ${result.id} guardado correctamente`);
+        } else {
+          showMessage(result.message || 'No se pudo guardar');
+        }
+      } catch (error) {
+        showMessage('Error al enviar la comanda');
+      }
+
+      form.reset();
+      precioInput.value = '';
+      montoInput.value = '';
+      cantidadInput.value = '1';
+      productoSelect.value = '';
+      resetSelections();
+    });
+
+    clearLocalBtn.addEventListener('click', () => {
+      localStorage.removeItem(STORAGE_KEY);
+      renderOrders();
+      showMessage('Se borraron las comandas locales');
+    });
+
+    loadProducts().then(() => {
+      cantidadInput.value = '1';
+      renderOrders();
+    });
+  </script>
+</body>
+</html>
