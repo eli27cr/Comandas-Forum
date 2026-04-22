@@ -164,13 +164,13 @@
   <div class="page">
     <section class="header">
       <h1>Comandas Dark Kitchen</h1>
-      <p>Versión UX/UI pro conectada a Google Sheets.</p>
+      <p>Captura rápida conectada a Google Sheets.</p>
     </section>
 
     <section class="layout">
       <section class="card">
         <h2>Modo cocina</h2>
-        <p style="color:#94a3b8;margin:0;">Selecciona producto, calcula automático y envía al tablero del chef.</p>
+        <p style="color:#94a3b8;margin:0;">Selecciona producto, calcula automático y envía la comanda.</p>
 
         <div class="stats">
           <div class="stat">
@@ -190,6 +190,7 @@
 
       <section class="card">
         <h2>Nueva comanda</h2>
+
         <form id="orderForm">
           <div class="field">
             <label for="cliente">Cliente</label>
@@ -199,7 +200,7 @@
           <div class="field">
             <label for="producto">Producto</label>
             <select id="producto" required>
-              <option value="">Selecciona un producto</option>
+              <option value="">Cargando productos...</option>
             </select>
           </div>
 
@@ -208,7 +209,6 @@
               <label for="cantidad">Cantidad</label>
               <input type="number" id="cantidad" min="1" step="1" value="1" required>
             </div>
-
             <div class="field">
               <label for="precio">Precio unitario</label>
               <input type="number" id="precio" readonly>
@@ -255,7 +255,7 @@
   </div>
 
   <script>
-    const WEB_APP_URL = 'https://script.googleusercontent.com/macros/echo?user_content_key=AWDtjMX71OrZU8TTyQMY33pO5ZVdJx6ozvWqlmENU7vixTjzD1REa-5CDN041Z_3RybifP3a_Bkz8_Yfn1msxPmRUrNMD6JCAKJYhrffeqg0sn0WVIost8KjcYs6z5E1znxmuXj0pMwcUQQOZviAi4uV5Ne_cgl-3i6nzN5V9bggtAanb7pQ9imKj4gCkkPxcTA_IdjNsnXrcwwr5wf2ao7ANjsug2MAeLOMrDY8IbUt7j8d6ZOgdk9SYrUUSUUeeK2erGd9pQz9IoK_8NB-TMuO73zcAuLxapht7e4pbvm9Suk5z57ya2E&lib=MYc4GnjaAU01O9Y5IjFeKiPhpBdWb_X_h';
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwEVz1u4SjzZu-doeKDHytRoZJ4V87VyJjdsC2qrpg9aGXbLnO4SW08THKlNcIA5en7/exec';
     const STORAGE_KEY = 'comandas-dark-kitchen-github';
 
     const form = document.getElementById('orderForm');
@@ -284,7 +284,7 @@
 
     function showMessage(text) {
       message.textContent = text;
-      setTimeout(() => message.textContent = '', 2200);
+      setTimeout(() => message.textContent = '', 2500);
     }
 
     function getOrders() {
@@ -347,26 +347,44 @@
       }
     }
 
+    async function loadProducts() {
+      try {
+        const response = await fetch(`${WEB_APP_URL}?action=products`, { cache: 'no-store' });
+        const data = await response.json();
+
+        products = Array.isArray(data) ? data : [];
+
+        productoSelect.innerHTML = '';
+
+        if (!products.length) {
+          productoSelect.innerHTML = '<option value="">No hay productos disponibles</option>';
+          return;
+        }
+
+        const firstOption = document.createElement('option');
+        firstOption.value = '';
+        firstOption.textContent = 'Selecciona un producto';
+        productoSelect.appendChild(firstOption);
+
+        products.forEach(item => {
+          const option = document.createElement('option');
+          option.value = String(item.producto).trim();
+          option.textContent = `${String(item.producto).trim()} — ₡${item.precio}`;
+          productoSelect.appendChild(option);
+        });
+      } catch (error) {
+        console.error('Error cargando productos:', error);
+        productoSelect.innerHTML = '<option value="">Error cargando productos</option>';
+        showMessage('No se pudo cargar el listado de productos');
+      }
+    }
+
     function resetSelections() {
       document.querySelectorAll('.toggle-btn').forEach(btn => btn.classList.remove('active'));
       document.querySelector('.toggle-btn[data-group="empaque"][data-value="Sí"]').classList.add('active');
       document.querySelector('.toggle-btn[data-group="pago"][data-value="Efectivo"]').classList.add('active');
       empaque = 'Sí';
       pago = 'Efectivo';
-    }
-
-    async function loadProducts() {
-      const response = await fetch(`${WEB_APP_URL}?action=products`, { cache: 'no-store' });
-      const data = await response.json();
-      products = Array.isArray(data) ? data : [];
-      productoSelect.innerHTML = '<option value="">Selecciona un producto</option>';
-
-      products.forEach(item => {
-        const option = document.createElement('option');
-        option.value = item.producto;
-        option.textContent = `${item.producto} — ₡${item.precio}`;
-        productoSelect.appendChild(option);
-      });
     }
 
     document.querySelectorAll('.toggle-btn').forEach(btn => {
@@ -396,15 +414,11 @@
         return;
       }
 
-      const precio = Number(product.precio);
-      const monto = precio * cantidad;
-      const fecha = new Date().toLocaleString('es-CR');
-
       try {
         const response = await fetch(WEB_APP_URL, {
           method: 'POST',
           body: new URLSearchParams({
-            fecha,
+            fecha: new Date().toLocaleString('es-CR'),
             cliente,
             cantidad,
             producto,
@@ -420,7 +434,7 @@
           const orders = getOrders();
           orders.unshift({
             id: result.id,
-            fecha,
+            fecha: new Date().toLocaleString('es-CR'),
             cliente,
             cantidad,
             producto,
@@ -437,6 +451,7 @@
           showMessage(result.message || 'No se pudo guardar');
         }
       } catch (error) {
+        console.error(error);
         showMessage('Error al enviar la comanda');
       }
 
@@ -454,8 +469,8 @@
       showMessage('Se borraron las comandas locales');
     });
 
-    loadProducts().then(() => {
-      cantidadInput.value = '1';
+    window.addEventListener('load', async () => {
+      await loadProducts();
       renderOrders();
     });
   </script>
