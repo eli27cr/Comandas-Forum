@@ -388,6 +388,36 @@
       pago = 'Efectivo';
     }
 
+    function sendToGoogleSheets(data) {
+      const iframeName = 'hidden_iframe_comandas';
+
+      let iframe = document.querySelector(`iframe[name="${iframeName}"]`);
+      if (!iframe) {
+        iframe = document.createElement('iframe');
+        iframe.name = iframeName;
+        iframe.style.display = 'none';
+        document.body.appendChild(iframe);
+      }
+
+      const tempForm = document.createElement('form');
+      tempForm.method = 'POST';
+      tempForm.action = WEB_APP_URL;
+      tempForm.target = iframeName;
+      tempForm.style.display = 'none';
+
+      Object.entries(data).forEach(([key, value]) => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = key;
+        input.value = value;
+        tempForm.appendChild(input);
+      });
+
+      document.body.appendChild(tempForm);
+      tempForm.submit();
+      document.body.removeChild(tempForm);
+    }
+
     document.querySelectorAll('.toggle-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const group = btn.dataset.group;
@@ -419,41 +449,35 @@
       const monto = product.precio * cantidad;
 
       try {
-        const response = await fetch(WEB_APP_URL, {
-          method: 'POST',
-          body: new URLSearchParams({
-            fecha,
-            cliente,
-            cantidad,
-            producto,
-            empaque,
-            pago,
-            estado: 'Nueva'
-          })
+        const orderId = 'Pendiente';
+
+        const orders = getOrders();
+        orders.unshift({
+          id: orderId,
+          fecha,
+          cliente,
+          cantidad,
+          producto,
+          precio: product.precio,
+          monto,
+          empaque,
+          pago,
+          estado: 'Nueva'
+        });
+        saveOrders(orders);
+        renderOrders();
+
+        sendToGoogleSheets({
+          fecha,
+          cliente,
+          cantidad,
+          producto,
+          empaque,
+          pago,
+          estado: 'Nueva'
         });
 
-        const result = await response.json();
-
-        if (result.ok) {
-          const orders = getOrders();
-          orders.unshift({
-            id: result.id,
-            fecha,
-            cliente,
-            cantidad,
-            producto,
-            precio: product.precio,
-            monto: result.monto || monto,
-            empaque,
-            pago,
-            estado: 'Nueva'
-          });
-          saveOrders(orders);
-          renderOrders();
-          showMessage(`Pedido ${result.id} guardado correctamente`);
-        } else {
-          showMessage(result.message || 'No se pudo guardar');
-        }
+        showMessage('Comanda enviada correctamente');
       } catch (error) {
         console.error(error);
         showMessage('Error al enviar la comanda');
