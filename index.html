@@ -72,6 +72,10 @@
       outline:none;
     }
     input[readonly]{background:#111827;color:#cbd5e1}
+    input:focus,select:focus{
+      border-color:#60a5fa;
+      box-shadow:0 0 0 4px rgba(59,130,246,0.15);
+    }
     .toggle-wrap{display:grid;grid-template-columns:1fr 1fr;gap:12px}
     .toggle-card{
       background:rgba(255,255,255,0.04);
@@ -117,8 +121,42 @@
       border:1px solid var(--line);
     }
     .message{min-height:24px;margin-top:8px;color:#86efac;font-weight:800}
+    .orders{display:grid;gap:12px;margin-top:12px}
+    .order-card{
+      background:#0f172a;
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:14px;
+      display:grid;
+      grid-template-columns:1.5fr 1fr 1fr;
+      gap:10px;
+      align-items:center;
+    }
+    .order-main strong{display:block;margin-bottom:4px}
+    .order-main span,.order-meta{color:var(--muted);font-size:.92rem;line-height:1.5}
+    .badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+    .badge{
+      padding:7px 10px;
+      border-radius:999px;
+      font-size:.78rem;
+      font-weight:800;
+    }
+    .badge-empaque{background:rgba(59,130,246,0.15);color:#93c5fd}
+    .badge-pago{background:rgba(245,158,11,0.15);color:#fcd34d}
+    .badge-id{background:rgba(34,197,94,0.15);color:#86efac}
+    .order-price{font-size:1rem;font-weight:900;text-align:right}
+    .empty{
+      padding:22px;
+      text-align:center;
+      color:var(--muted);
+      border:1px dashed rgba(255,255,255,0.15);
+      border-radius:16px;
+      background:rgba(255,255,255,0.02);
+      margin-top:12px;
+    }
     @media (max-width:900px){
-      .layout,.row-2,.stats,.toggle-wrap,.actions{grid-template-columns:1fr}
+      .layout,.row-2,.stats,.toggle-wrap,.actions,.order-card{grid-template-columns:1fr}
+      .order-price{text-align:left}
     }
   </style>
 </head>
@@ -132,32 +170,44 @@
     <section class="layout">
       <section class="card">
         <h2>Modo cocina</h2>
+        <p style="color:#94a3b8;margin:0;">Selecciona producto, calcula automático y envía la comanda.</p>
+
         <div class="stats">
-          <div class="stat"><div class="stat-label">Comandas locales</div><div class="stat-value" id="totalOrders">0</div></div>
-          <div class="stat"><div class="stat-label">Monto local</div><div class="stat-value" id="totalAmount">₡0</div></div>
-          <div class="stat"><div class="stat-label">Estado inicial</div><div class="stat-value">Nueva</div></div>
+          <div class="stat">
+            <div class="stat-label">Comandas locales</div>
+            <div class="stat-value" id="totalOrders">0</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Monto local</div>
+            <div class="stat-value" id="totalAmount">₡0</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Estado inicial</div>
+            <div class="stat-value">Nueva</div>
+          </div>
         </div>
       </section>
 
       <section class="card">
         <h2>Nueva comanda</h2>
+
         <form id="orderForm">
           <div class="field">
             <label for="cliente">Cliente</label>
-            <input type="text" id="cliente" required>
+            <input type="text" id="cliente" placeholder="Ej: María González" required>
           </div>
 
           <div class="field">
             <label for="producto">Producto</label>
             <select id="producto" required>
-              <option value="">Cargando productos...</option>
+              <option value="">Selecciona un producto</option>
             </select>
           </div>
 
           <div class="row-2">
             <div class="field">
               <label for="cantidad">Cantidad</label>
-              <input type="number" id="cantidad" min="1" value="1" required>
+              <input type="number" id="cantidad" min="1" step="1" value="1" required>
             </div>
             <div class="field">
               <label for="precio">Precio unitario</label>
@@ -197,12 +247,42 @@
         <div class="message" id="message"></div>
       </section>
     </section>
+
+    <section class="card" style="margin-top:18px;">
+      <h2>Últimas comandas locales</h2>
+      <div class="orders" id="ordersContainer"></div>
+    </section>
   </div>
 
   <script>
-    const WEB_APP_URL = 'https://script.googleusercontent.com/macros/echo?user_content_key=AWDtjMX71OrZU8TTyQMY33pO5ZVdJx6ozvWqlmENU7vixTjzD1REa-5CDN041Z_3RybifP3a_Bkz8_Yfn1msxPmRUrNMD6JCAKJYhrffeqg0sn0WVIost8KjcYs6z5E1znxmuXj0pMwcUQQOZviAi4uV5Ne_cgl-3i6nzN5V9bggtAanb7pQ9imKj4gCkkPxcTA_IdjNsnXrcwwr5wf2ao7ANjsug2MAeLOMrDY8IbUt7j8d6ZOgdk9SYrUUSUUeeK2erGd9pQz9IoK_8NB-TMuO73zcAuLxapht7e4pbvm9Suk5z57ya2E&lib=MYc4GnjaAU01O9Y5IjFeKiPhpBdWb_X_h
-';
-    const STORAGE_KEY = 'comandas-dark-kitchen-github';
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwEVz1u4SjzZu-doeKDHytRoZJ4V87VyJjdsC2qrpg9aGXbLnO4SW08THKlNcIA5en7/exec';
+    const STORAGE_KEY = 'comandas-dark-kitchen-local';
+
+    const PRODUCTS = [
+      { producto: 'Huevo', precio: 500 },
+      { producto: 'Omelette', precio: 1500 },
+      { producto: 'Omelette XL', precio: 2000 },
+      { producto: 'Prensadas', precio: 1500 },
+      { producto: 'Prensadas XL', precio: 2000 },
+      { producto: 'Burrito', precio: 2000 },
+      { producto: 'Super Burrito', precio: 2500 },
+      { producto: 'Sandwich', precio: 2000 },
+      { producto: 'Sandwich sin huevo', precio: 1500 },
+      { producto: '1/2 Gallo Pinto', precio: 500 },
+      { producto: 'Gallo Pinto porción', precio: 800 },
+      { producto: 'Gallo Pinto pequeño (1 huevo)', precio: 1500 },
+      { producto: 'Gallo Pinto full (2 huevos)', precio: 2500 },
+      { producto: 'Gallo Pinto XL (3 huevos)', precio: 3000 },
+      { producto: 'Pancakes', precio: 2000 },
+      { producto: 'Maduro porción', precio: 500 },
+      { producto: 'Pan y Natilla', precio: 500 },
+      { producto: 'Arroz porción', precio: 500 },
+      { producto: 'Proteína porción', precio: 1500 },
+      { producto: 'Almuerzo', precio: 3000 },
+      { producto: 'Ensalada pqña', precio: 500 },
+      { producto: 'Ensalada mediana', precio: 1000 },
+      { producto: 'Ensalada c/proteína', precio: 3000 }
+    ];
 
     const form = document.getElementById('orderForm');
     const clienteInput = document.getElementById('cliente');
@@ -211,13 +291,21 @@
     const precioInput = document.getElementById('precio');
     const montoInput = document.getElementById('monto');
     const message = document.getElementById('message');
+    const ordersContainer = document.getElementById('ordersContainer');
     const clearLocalBtn = document.getElementById('clearLocalBtn');
     const totalOrders = document.getElementById('totalOrders');
     const totalAmount = document.getElementById('totalAmount');
 
     let empaque = 'Sí';
     let pago = 'Efectivo';
-    let products = [];
+
+    function formatCurrency(value) {
+      return new Intl.NumberFormat('es-CR', {
+        style: 'currency',
+        currency: 'CRC',
+        maximumFractionDigits: 2
+      }).format(Number(value || 0));
+    }
 
     function showMessage(text) {
       message.textContent = text;
@@ -232,18 +320,51 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
     }
 
-    function renderTotals() {
+    function renderOrders() {
       const orders = getOrders();
+      ordersContainer.innerHTML = '';
+
+      if (!orders.length) {
+        ordersContainer.innerHTML = '<div class="empty">Todavía no hay comandas locales.</div>';
+      } else {
+        orders.forEach(order => {
+          const card = document.createElement('article');
+          card.className = 'order-card';
+          card.innerHTML = `
+            <div class="order-main">
+              <strong>${order.cliente}</strong>
+              <span>${order.cantidad} x ${order.producto}</span>
+              <div class="badges">
+                <span class="badge badge-id">${order.id || 'Pendiente'}</span>
+                <span class="badge badge-empaque">Empaque: ${order.empaque}</span>
+                <span class="badge badge-pago">Pago: ${order.pago}</span>
+              </div>
+            </div>
+            <div class="order-meta">${order.fecha}</div>
+            <div class="order-price">${formatCurrency(order.monto)}</div>
+          `;
+          ordersContainer.appendChild(card);
+        });
+      }
+
       totalOrders.textContent = orders.length;
-      totalAmount.textContent = new Intl.NumberFormat('es-CR',{style:'currency',currency:'CRC'}).format(
+      totalAmount.textContent = formatCurrency(
         orders.reduce((sum, o) => sum + Number(o.monto || 0), 0)
       );
     }
 
+    function fillProducts() {
+      productoSelect.innerHTML = '<option value="">Selecciona un producto</option>';
+      PRODUCTS.forEach(item => {
+        const option = document.createElement('option');
+        option.value = item.producto;
+        option.textContent = `${item.producto} — ₡${item.precio}`;
+        productoSelect.appendChild(option);
+      });
+    }
+
     function findProduct(name) {
-      return products.find(p =>
-        String(p.producto).trim().toLowerCase() === String(name).trim().toLowerCase()
-      );
+      return PRODUCTS.find(p => p.producto === name);
     }
 
     function recalculate() {
@@ -252,42 +373,19 @@
 
       if (product) {
         precioInput.value = product.precio;
-        montoInput.value = qty > 0 ? product.precio * qty : product.precio;
+        montoInput.value = qty > 0 ? product.precio * qty : 0;
       } else {
         precioInput.value = '';
         montoInput.value = '';
       }
     }
 
-    async function loadProducts() {
-      try {
-        const response = await fetch(`${WEB_APP_URL}&action=products`, { cache: 'no-store' });
-        const data = await response.json();
-
-        products = Array.isArray(data) ? data : [];
-        productoSelect.innerHTML = '';
-
-        if (!products.length) {
-          productoSelect.innerHTML = '<option value="">No hay productos disponibles</option>';
-          return;
-        }
-
-        const firstOption = document.createElement('option');
-        firstOption.value = '';
-        firstOption.textContent = 'Selecciona un producto';
-        productoSelect.appendChild(firstOption);
-
-        products.forEach(item => {
-          const option = document.createElement('option');
-          option.value = String(item.producto).trim();
-          option.textContent = `${String(item.producto).trim()} — ₡${item.precio}`;
-          productoSelect.appendChild(option);
-        });
-      } catch (error) {
-        console.error(error);
-        productoSelect.innerHTML = '<option value="">Error cargando productos</option>';
-        showMessage('No se pudo cargar el listado de productos');
-      }
+    function resetSelections() {
+      document.querySelectorAll('.toggle-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelector('.toggle-btn[data-group="empaque"][data-value="Sí"]').classList.add('active');
+      document.querySelector('.toggle-btn[data-group="pago"][data-value="Efectivo"]').classList.add('active');
+      empaque = 'Sí';
+      pago = 'Efectivo';
     }
 
     document.querySelectorAll('.toggle-btn').forEach(btn => {
@@ -317,11 +415,14 @@
         return;
       }
 
+      const fecha = new Date().toLocaleString('es-CR');
+      const monto = product.precio * cantidad;
+
       try {
         const response = await fetch(WEB_APP_URL, {
           method: 'POST',
           body: new URLSearchParams({
-            fecha: new Date().toLocaleString('es-CR'),
+            fecha,
             cliente,
             cantidad,
             producto,
@@ -337,18 +438,18 @@
           const orders = getOrders();
           orders.unshift({
             id: result.id,
-            fecha: new Date().toLocaleString('es-CR'),
+            fecha,
             cliente,
             cantidad,
             producto,
-            precio: result.precio,
-            monto: result.monto,
+            precio: product.precio,
+            monto: result.monto || monto,
             empaque,
             pago,
             estado: 'Nueva'
           });
           saveOrders(orders);
-          renderTotals();
+          renderOrders();
           showMessage(`Pedido ${result.id} guardado correctamente`);
         } else {
           showMessage(result.message || 'No se pudo guardar');
@@ -357,18 +458,23 @@
         console.error(error);
         showMessage('Error al enviar la comanda');
       }
+
+      form.reset();
+      precioInput.value = '';
+      montoInput.value = '';
+      cantidadInput.value = '1';
+      productoSelect.value = '';
+      resetSelections();
     });
 
     clearLocalBtn.addEventListener('click', () => {
       localStorage.removeItem(STORAGE_KEY);
-      renderTotals();
+      renderOrders();
       showMessage('Se borraron las comandas locales');
     });
 
-    window.addEventListener('load', async () => {
-      await loadProducts();
-      renderTotals();
-    });
+    fillProducts();
+    renderOrders();
   </script>
 </body>
 </html>
