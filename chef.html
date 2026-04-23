@@ -13,8 +13,6 @@
       --line:rgba(255,255,255,0.08);
       --green:#22c55e;
       --blue:#3b82f6;
-      --orange:#f59e0b;
-      --red:#ef4444;
       --shadow:0 24px 50px rgba(0,0,0,0.35);
     }
     *{box-sizing:border-box}
@@ -26,7 +24,7 @@
         linear-gradient(180deg,#0f172a 0%,#081120 100%);
       color:var(--text);
     }
-    .page{width:min(1500px,95%);margin:0 auto;padding:20px 34px}
+    .page{width:min(1400px,95%);margin:0 auto;padding:20px 34px}
     .topbar{
       display:flex;
       justify-content:space-between;
@@ -41,7 +39,7 @@
     }
     .topbar h1{margin:0;font-size:clamp(1.8rem,3vw,2.6rem)}
     .topbar p{margin:6px 0 0;color:var(--muted)}
-    .board{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+    .board{display:grid;grid-template-columns:1fr 1fr;gap:14px}
     .column{
       background:var(--panel);
       border-radius:24px;
@@ -68,10 +66,7 @@
       border-left:7px solid #cbd5e1;
     }
     .order-card.Nueva{border-left-color:var(--blue)}
-    .order-card.Preparando{border-left-color:var(--orange)}
-    .order-card.Preparada{border-left-color:var(--green)}
-    .order-card.Entregada{border-left-color:#06b6d4}
-    .order-card.Cancelada{border-left-color:var(--red)}
+    .order-card.Entregada{border-left-color:var(--green)}
     .card-top{display:flex;justify-content:space-between;gap:8px;margin-bottom:8px}
     .client{font-weight:900;font-size:1rem}
     .time{color:#64748b;font-size:0.78rem;font-weight:700}
@@ -107,17 +102,12 @@
       border:1px solid var(--line);
     }
     .summary div{font-weight:900;font-size:1rem}
-    .empty{
-      padding:22px 12px;
-      text-align:center;
+    .hint{
+      margin-top:10px;
       color:var(--muted);
-      border:1px dashed rgba(255,255,255,0.16);
-      border-radius:16px;
-      background:rgba(255,255,255,0.02);
+      font-size:.9rem;
     }
-    @media(max-width:1450px){.board{grid-template-columns:repeat(3,1fr)}}
-    @media(max-width:980px){.board{grid-template-columns:1fr 1fr}}
-    @media(max-width:700px){.board{grid-template-columns:1fr}}
+    @media(max-width:900px){.board{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
@@ -125,7 +115,7 @@
     <section class="topbar">
       <div>
         <h1>Chef Board</h1>
-        <p>Tablero de pedidos Dark Kitchen</p>
+        <p>Tablero de pedidos con 2 estados</p>
       </div>
       <div id="lastUpdate">Actualizando...</div>
     </section>
@@ -135,36 +125,29 @@
         <div class="column-header">Nueva <span id="pillNueva">0</span></div>
         <div class="cards" id="cardsNueva"></div>
       </div>
-      <div class="column">
-        <div class="column-header">Preparando <span id="pillPreparando">0</span></div>
-        <div class="cards" id="cardsPreparando"></div>
-      </div>
-      <div class="column">
-        <div class="column-header">Preparada <span id="pillPreparada">0</span></div>
-        <div class="cards" id="cardsPreparada"></div>
-      </div>
+
       <div class="column">
         <div class="column-header">Entregada <span id="pillEntregada">0</span></div>
         <div class="cards" id="cardsEntregada"></div>
       </div>
-      <div class="column">
-        <div class="column-header">Cancelada <span id="pillCancelada">0</span></div>
-        <div class="cards" id="cardsCancelada"></div>
-      </div>
     </section>
 
     <div class="summary">
-      <div>Total: <span id="totalMonto">₡0</span></div>
-      <div>Efectivo: <span id="totalEfectivo">₡0</span></div>
-      <div>SINPE: <span id="totalSINPE">₡0</span></div>
+      <div>Total pendiente: <span id="totalMonto">₡0</span></div>
+      <div>Efectivo pendiente: <span id="totalEfectivo">₡0</span></div>
+      <div>SINPE pendiente: <span id="totalSINPE">₡0</span></div>
+    </div>
+
+    <div class="hint">
+      Haz un clic en esta pantalla una vez para habilitar el sonido del navegador.
     </div>
   </div>
 
   <script>
-    const SCRIPT_URL = 'https://script.googleusercontent.com/macros/echo?user_content_key=AWDtjMX71OrZU8TTyQMY33pO5ZVdJx6ozvWqlmENU7vixTjzD1REa-5CDN041Z_3RybifP3a_Bkz8_Yfn1msxPmRUrNMD6JCAKJYhrffeqg0sn0WVIost8KjcYs6z5E1znxmuXj0pMwcUQQOZviAi4uV5Ne_cgl-3i6nzN5V9bggtAanb7pQ9imKj4gCkkPxcTA_IdjNsnXrcwwr5wf2ao7ANjsug2MAeLOMrDY8IbUt7j8d6ZOgdk9SYrUUSUUeeK2erGd9pQz9IoK_8NB-TMuO73zcAuLxapht7e4pbvm9Suk5z57ya2E&lib=MYc4GnjaAU01O9Y5IjFeKiPhpBdWb_X_h';
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwEVz1u4SjzZu-doeKDHytRoZJ4V87VyJjdsC2qrpg9aGXbLnO4SW08THKlNcIA5en7/exec';
     const REFRESH_MS = 5000;
 
-    let previousIds = new Set();
+    let previousPendingIds = new Set();
     let audioUnlocked = false;
 
     function unlockAudio() {
@@ -208,82 +191,84 @@
       try {
         const res = await fetch(`${SCRIPT_URL}?action=list`, { cache: 'no-store' });
         const data = await res.json();
-        return data || [];
+        return Array.isArray(data) ? data : [];
       } catch (err) {
-        console.error(err);
+        console.error('Error cargando pedidos:', err);
         return [];
       }
     }
 
-    function renderOrders(orders) {
-      const columns = {
-        Nueva: document.getElementById('cardsNueva'),
-        Preparando: document.getElementById('cardsPreparando'),
-        Preparada: document.getElementById('cardsPreparada'),
-        Entregada: document.getElementById('cardsEntregada'),
-        Cancelada: document.getElementById('cardsCancelada')
-      };
+    async function updateStatus(id, estado) {
+      try {
+        await fetch(SCRIPT_URL, {
+          method: 'POST',
+          body: new URLSearchParams({
+            action: 'updateStatus',
+            id,
+            estado
+          })
+        });
+      } catch (err) {
+        console.error('Error actualizando estado:', err);
+      }
+    }
 
-      for (let col in columns) columns[col].innerHTML = '';
+    function renderOrders(orders) {
+      const nuevaContainer = document.getElementById('cardsNueva');
+      const entregadaContainer = document.getElementById('cardsEntregada');
+
+      nuevaContainer.innerHTML = '';
+      entregadaContainer.innerHTML = '';
 
       let total = 0;
       let efectivo = 0;
       let sinpe = 0;
 
       orders.forEach(o => {
-        if (o.estado !== 'Cancelada') {
+        const estado = o.estado === 'Entregada' ? 'Entregada' : 'Nueva';
+
+        if (estado === 'Nueva') {
           total += Number(o.monto || 0);
           if (o.pago === 'Efectivo') efectivo += Number(o.monto || 0);
           if (o.pago === 'SINPE') sinpe += Number(o.monto || 0);
         }
 
         const div = document.createElement('div');
-        div.className = `order-card ${o.estado}`;
+        div.className = `order-card ${estado}`;
         div.innerHTML = `
           <div class="card-top">
-            <div class="client">${o.cliente}</div>
-            <div class="time">${o.fecha}</div>
+            <div class="client">${o.cliente || ''}</div>
+            <div class="time">${o.fecha || ''}</div>
           </div>
-          <div class="product">${o.cantidad} x ${o.producto}</div>
+          <div class="product">${Number(o.cantidad || 0)} x ${o.producto || ''}</div>
           <div class="badges">
-            <span class="badge badge-id">${o.id}</span>
-            <span class="badge badge-empaque">Empaque: ${o.empaque}</span>
-            <span class="badge badge-pago">${o.pago}</span>
+            <span class="badge badge-id">${o.id || ''}</span>
+            <span class="badge badge-empaque">Empaque: ${o.empaque || 'No'}</span>
+            <span class="badge badge-pago">${o.pago || 'Efectivo'}</span>
           </div>
           <div class="amount">₡${Number(o.monto || 0).toLocaleString('es-CR')}</div>
           <select data-id="${o.id}">
-            <option value="Nueva"${o.estado==='Nueva'?' selected':''}>Nueva</option>
-            <option value="Preparando"${o.estado==='Preparando'?' selected':''}>Preparando</option>
-            <option value="Preparada"${o.estado==='Preparada'?' selected':''}>Preparada</option>
-            <option value="Entregada"${o.estado==='Entregada'?' selected':''}>Entregada</option>
-            <option value="Cancelada"${o.estado==='Cancelada'?' selected':''}>Cancelada</option>
+            <option value="Nueva"${estado === 'Nueva' ? ' selected' : ''}>Nueva</option>
+            <option value="Entregada"${estado === 'Entregada' ? ' selected' : ''}>Entregada</option>
           </select>
         `;
 
         div.querySelector('select').addEventListener('change', async e => {
           const newStatus = e.target.value;
           const id = e.target.getAttribute('data-id');
-          await fetch(SCRIPT_URL, {
-            method: 'POST',
-            body: new URLSearchParams({
-              action: 'updateStatus',
-              id,
-              estado: newStatus
-            })
-          });
+          await updateStatus(id, newStatus);
           updateBoard();
         });
 
-        if (columns[o.estado]) {
-          columns[o.estado].appendChild(div);
+        if (estado === 'Nueva') {
+          nuevaContainer.appendChild(div);
+        } else {
+          entregadaContainer.appendChild(div);
         }
       });
 
-      document.getElementById('pillNueva').textContent = orders.filter(o => o.estado === 'Nueva').length;
-      document.getElementById('pillPreparando').textContent = orders.filter(o => o.estado === 'Preparando').length;
-      document.getElementById('pillPreparada').textContent = orders.filter(o => o.estado === 'Preparada').length;
+      document.getElementById('pillNueva').textContent = orders.filter(o => o.estado !== 'Entregada').length;
       document.getElementById('pillEntregada').textContent = orders.filter(o => o.estado === 'Entregada').length;
-      document.getElementById('pillCancelada').textContent = orders.filter(o => o.estado === 'Cancelada').length;
 
       document.getElementById('totalMonto').textContent = `₡${total.toLocaleString('es-CR')}`;
       document.getElementById('totalEfectivo').textContent = `₡${efectivo.toLocaleString('es-CR')}`;
@@ -293,12 +278,17 @@
     async function updateBoard() {
       const orders = await fetchOrders();
 
-      const currentIds = new Set(orders.map(o => String(o.id)));
+      const currentPendingIds = new Set(
+        orders
+          .filter(o => o.estado !== 'Entregada')
+          .map(o => String(o.id))
+      );
+
       let hasNew = false;
 
-      if (previousIds.size > 0) {
-        for (const id of currentIds) {
-          if (!previousIds.has(id)) {
+      if (previousPendingIds.size > 0) {
+        for (const id of currentPendingIds) {
+          if (!previousPendingIds.has(id)) {
             hasNew = true;
             break;
           }
@@ -309,7 +299,7 @@
         playNewOrderSound();
       }
 
-      previousIds = currentIds;
+      previousPendingIds = currentPendingIds;
 
       renderOrders(orders);
       document.getElementById('lastUpdate').textContent =
