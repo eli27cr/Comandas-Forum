@@ -432,7 +432,7 @@
     productoSelect.addEventListener('change', recalculate);
     cantidadInput.addEventListener('input', recalculate);
 
-    form.addEventListener('submit', async (e) => {
+    form.addEventListener('submit', (e) => {
       e.preventDefault();
 
       const cliente = clienteInput.value.trim();
@@ -448,40 +448,33 @@
       const fecha = new Date().toLocaleString('es-CR');
       const monto = product.precio * cantidad;
 
-      try {
-        const orderId = 'Pendiente';
+      const orders = getOrders();
+      orders.unshift({
+        id: 'Pendiente',
+        fecha,
+        cliente,
+        cantidad,
+        producto,
+        precio: product.precio,
+        monto,
+        empaque,
+        pago,
+        estado: 'Nueva'
+      });
+      saveOrders(orders);
+      renderOrders();
 
-        const orders = getOrders();
-        orders.unshift({
-          id: orderId,
-          fecha,
-          cliente,
-          cantidad,
-          producto,
-          precio: product.precio,
-          monto,
-          empaque,
-          pago,
-          estado: 'Nueva'
-        });
-        saveOrders(orders);
-        renderOrders();
+      sendToGoogleSheets({
+        fecha,
+        cliente,
+        cantidad,
+        producto,
+        empaque,
+        pago,
+        estado: 'Nueva'
+      });
 
-        sendToGoogleSheets({
-          fecha,
-          cliente,
-          cantidad,
-          producto,
-          empaque,
-          pago,
-          estado: 'Nueva'
-        });
-
-        showMessage('Comanda enviada correctamente');
-      } catch (error) {
-        console.error(error);
-        showMessage('Error al enviar la comanda');
-      }
+      showMessage('Comanda enviada correctamente');
 
       form.reset();
       precioInput.value = '';
